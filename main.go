@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/carlosljr/logDB/commands/get"
+	"github.com/carlosljr/logDB/commands/set"
 )
 
 func throwInputError(action string) {
@@ -65,5 +68,26 @@ func main() {
 		throwInputError(action)
 	}
 
-	fmt.Println("Ready for action!")
+	var err error
+	var value string
+	key := cmd_args[0]
+
+	if strings.EqualFold(action, "get") {
+		// Chama função que retorna o valor associado a chave
+		if value, err = get.GetValueFromKey(key); err != nil {
+			fmt.Fprintf(os.Stderr, "Error during get command: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("%s\n", value)
+	}
+
+	if strings.EqualFold(action, "set") {
+		value = cmd_args[1]
+		// caso seja uma escrita, chama função que escreve. Verifica retorno para ver se houve erro
+		if err = set.SetValueIntoLog(key, value); err != nil {
+			fmt.Fprintf(os.Stderr, "Error during set command: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("Value %s stored with success\n", value)
+	}
 }
