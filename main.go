@@ -7,6 +7,7 @@ import (
 
 	"github.com/carlosljr/logDB/command"
 	"github.com/carlosljr/logDB/command/get"
+	"github.com/carlosljr/logDB/segment"
 )
 
 func throwInputError(action string) {
@@ -47,7 +48,11 @@ func main() {
 	fmt.Printf("set {key,value} - to set a new or update key/value pair\n")
 	fmt.Printf("exit - Leave LogDB\n\n")
 
-	command := command.Command{}
+	command := &command.Command{
+		CurrentSegment: &segment.Segment{
+			LogFile: "logfile_1.log",
+		},
+	}
 
 	for {
 		fmt.Printf("Insert your command:\n\n")

@@ -11,8 +11,11 @@ type Command struct {
 	Segments       []*segment.Segment
 }
 
-func (c Command) SetValueIntoLog(key, value string) error {
-	if c.CurrentSegment == nil || c.CurrentSegment.LineNumber == 25 {
+func (c *Command) SetValueIntoLog(key, value string) error {
+	if len(c.Segments) == 0 {
+		c.Segments = append(c.Segments, c.CurrentSegment)
+	}
+	if c.CurrentSegment.LineNumber == 3 {
 		c.CurrentSegment = &segment.Segment{
 			LogFile: fmt.Sprintf("logfile_%d.log", len(c.Segments)+1),
 		}
