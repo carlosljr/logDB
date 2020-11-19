@@ -15,7 +15,15 @@ type Segment struct {
 }
 
 func (s *Segment) writeLineIntoFile(key, value string) error {
-	file, err := os.OpenFile(s.LogFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	filePath := "./log_storage"
+
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		_ = os.Mkdir(filePath, os.ModePerm)
+	}
+
+	fileNamePath := fmt.Sprintf("%s/%s", filePath, s.LogFile)
+
+	file, err := os.OpenFile(fileNamePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 
 	if err != nil {
 		return err
