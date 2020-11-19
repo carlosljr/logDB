@@ -113,10 +113,15 @@ func main() {
 			fmt.Printf("\nValue %s stored with success\n\n", value)
 		}
 	}
-	err := os.RemoveAll("./log_storage")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "\n\nCould not remove log file storage: %v\n\n", err)
+	filePath := "./log_storage"
+
+	if _, err := os.Stat(filePath); !os.IsNotExist(err) {
+		err := os.RemoveAll("./log_storage")
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "\n\nCould not remove log file storage: %v\n\n", err)
+		}
 	}
+
 	fmt.Fprintf(os.Stdout, "\nSee ya!\n\n")
 	os.Exit(0)
 }
