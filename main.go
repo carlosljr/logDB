@@ -6,8 +6,6 @@ import (
 	"strings"
 
 	"github.com/carlosljr/logDB/command"
-	"github.com/carlosljr/logDB/command/get"
-	"github.com/carlosljr/logDB/segment"
 )
 
 func throwInputError(action string) {
@@ -48,11 +46,9 @@ func main() {
 	fmt.Printf("set {key,value} - to set a new or update key/value pair\n")
 	fmt.Printf("exit - Leave LogDB\n\n")
 
-	command := &command.Command{
-		CurrentSegment: &segment.Segment{
-			LogFile: "logfile_1.log",
-		},
-	}
+	command := &command.Command{}
+
+	go command.CompactAndMerge()
 
 	for {
 		fmt.Printf("Insert your command:\n\n")
@@ -101,11 +97,11 @@ func main() {
 
 		if strings.EqualFold(action, "get") {
 			// Chama função que retorna o valor associado a chave
-			if value, err = get.GetValueFromKey(key); err != nil {
+			if value, err = command.GetValueFromKey(key); err != nil {
 				fmt.Fprintf(os.Stderr, "\n\nError during get command: %v\n\n", err)
 				continue
 			}
-			fmt.Printf("\n%s\n", value)
+			fmt.Printf("\nResult:\n\n%s\n\n", value)
 		}
 
 		if strings.EqualFold(action, "set") {
