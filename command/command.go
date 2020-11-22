@@ -3,6 +3,9 @@ package command
 import (
 	"fmt"
 	"os"
+	"sort"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/carlosljr/logDB/segment"
@@ -27,7 +30,6 @@ func (c *Command) CompactAndMerge() {
 		compactWithSuccess := true
 		for _, s := range segmentsLessCurrent {
 			recentKeyValues, err := s.Compact()
-			fmt.Printf("\n\nRecent key values for %s: %v\n\n", s.LogFile, recentKeyValues)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "\n\nCould not compact %s segment: %v\n\n", s.LogFile, err)
 				compactWithSuccess = false
@@ -38,8 +40,6 @@ func (c *Command) CompactAndMerge() {
 			}
 		}
 
-		fmt.Printf("\n\nMerged key values: %v\n\n", mergedKeyValues)
-
 		if !compactWithSuccess {
 			continue
 		}
@@ -49,7 +49,7 @@ func (c *Command) CompactAndMerge() {
 		}
 
 		mergedSegment := &segment.Segment{
-			LogFile: fmt.Sprintf("logfile_%d.log", c.numberOfSegments+1),
+			LogFile: fmt.Sprintf("logfile-merged_%d.log", c.numberOfSegments+1),
 		}
 
 		mergedWithSuccess := true
@@ -72,8 +72,6 @@ func (c *Command) CompactAndMerge() {
 		// Remover segmentos do slice
 		c.Segments = c.Segments[len(c.Segments)-1:]
 
-		// Definir novo segmento no slice
-
 		// Inserir na primeira posição
 		c.Segments[0] = mergedSegment
 		c.Segments = append(c.Segments, c.CurrentSegment)
@@ -86,6 +84,67 @@ func (c *Command) CompactAndMerge() {
 		c.numberOfSegments += 1
 
 	}
+}
+
+func getNumberFromSegment(fileName string) int {
+	logFilePrefix := strings.Split(fileName, ".")[0]
+	fileNumberStr := strings.Split(logFilePrefix, "_")[1]
+	fileNumber, _ := strconv.Atoi(fileNumberStr)
+
+	return fileNumber
+}
+
+func (c *Command) sortAndUpdateSegments(segments []*segment.Segment) {
+
+	var logFileNumbers []int
+
+	for _, s := range segments {
+		logFileNumbers = append(logFileNumbers, getNumberFromSegment(s.LogFile))
+	}
+	sort.Ints(logFileNumbers)
+
+	lastSegmentNumber := logFileNumbers[len(logFileNumbers)-1]
+
+	for _, segmentNumber := range logFileNumbers {
+		for _, s := range segments {
+			if strings.Contains(s.LogFile, strconv.Itoa(segmentNumber)) {
+				c.Segments = append(c.Segments, s)
+				break
+			}
+		}
+	}
+
+	if lastSegmentNumber > c.numberOfSegments {
+		c.numberOfSegments = lastSegmentNumber
+	}
+
+}
+
+func (c *Command) LoadExistingSegments(logFiles []string) error {
+	var mergedSegments []*segment.Segment
+	var rawSegments []*segment.Segment
+	for _, logFile := range logFiles {
+		s := &segment.Segment{
+			LogFile: logFile,
+		}
+		// Carrega os dados do log e gera a hash table
+		if err := s.LoadExistingData(); err != nil {
+			fmt.Fprintf(os.Stderr, "\n\nFailed during logFile %s load process: %v\n\n", s.LogFile, err)
+			return err
+		}
+		if strings.Contains(s.LogFile, "merged") {
+			mergedSegments = append(mergedSegments, s)
+		} else {
+			rawSegments = append(rawSegments, s)
+		}
+
+	}
+	c.sortAndUpdateSegments(mergedSegments)
+	c.sortAndUpdateSegments(rawSegments)
+
+	c.CurrentSegment = c.Segments[len(c.Segments)-1]
+
+	return nil
 }
 
 func (c *Command) SetValueIntoLog(key, value string) error {

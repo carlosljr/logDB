@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/carlosljr/logDB/command"
@@ -39,6 +40,29 @@ func hasValidArguments(action string, arguments []string) bool {
 	return hasValidSetArguments(arguments)
 }
 
+func currentLogFiles() []string {
+	filePath := "./log_storage"
+	var logFiles []string
+
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		return logFiles
+	}
+
+	err := filepath.Walk(filePath, func(path string, info os.FileInfo, err error) error {
+		if info.IsDir() {
+			return nil
+		}
+		logFiles = append(logFiles, info.Name())
+		return nil
+	})
+
+	if err != nil {
+		return nil
+	}
+
+	return logFiles
+}
+
 func main() {
 
 	fmt.Printf("\nWelcome to LogDB. We support the following commands bellow:\n\n")
@@ -47,6 +71,17 @@ func main() {
 	fmt.Printf("exit - Leave LogDB\n\n")
 
 	command := &command.Command{}
+
+	logFiles := currentLogFiles()
+
+	if len(logFiles) != 0 {
+		// Carrega os arquivos de log e existentes
+		// e cria os segmentos com suas respectivas hash tables
+		// fmt.Println("Logfiles:", logFiles)
+		if err := command.LoadExistingSegments(logFiles); err != nil {
+			return
+		}
+	}
 
 	go command.CompactAndMerge()
 
@@ -114,14 +149,14 @@ func main() {
 			fmt.Printf("\nValue %s stored with success\n\n", value)
 		}
 	}
-	filePath := "./log_storage"
+	// filePath := "./log_storage"
 
-	if _, err := os.Stat(filePath); !os.IsNotExist(err) {
-		err := os.RemoveAll("./log_storage")
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "\n\nCould not remove log file storage: %v\n\n", err)
-		}
-	}
+	// if _, err := os.Stat(filePath); !os.IsNotExist(err) {
+	// 	err := os.RemoveAll("./log_storage")
+	// 	if err != nil {
+	// 		fmt.Fprintf(os.Stderr, "\n\nCould not remove log file storage: %v\n\n", err)
+	// 	}
+	// }
 
 	fmt.Fprintf(os.Stdout, "\nSee ya!\n\n")
 	os.Exit(0)

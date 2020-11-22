@@ -160,3 +160,23 @@ func (s *Segment) Compact() (map[string]string, error) {
 
 	return recentKeysValues, s.resetMe(recentKeysValues)
 }
+
+func (s *Segment) LoadExistingData() error {
+	fileLines, err := s.getFileLines()
+
+	if err != nil {
+		return err
+	}
+
+	if s.hashTable == nil {
+		s.hashTable = make(map[string]int)
+	}
+
+	for i, fileLine := range fileLines {
+		key := strings.Split(fileLine, ",")[0]
+		s.hashTable[key] = i
+	}
+	s.LineNumber = len(fileLines)
+
+	return nil
+}
