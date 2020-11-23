@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,33 +12,11 @@ import (
 
 func throwInputError(action string) {
 	if action != "" {
-		fmt.Fprintf(os.Stderr, "\n\nERROR:\nInvalid command %s. Please, insert one of these commands:\nget {key} - to retrieve a value from it correspondent {key}\nset {key, value} - to set a new or update key/value pair\n\n", action)
+		fmt.Fprintf(os.Stderr, "\n\nERROR:\nInvalid command %s. You need to insert a key.\ne.g.\nget {key} - to retrieve a value from it correspondent {key}\nset {key} - to set a new or update key/value pair\n\n", action)
 		return
 	}
 
-	fmt.Fprint(os.Stderr, "\n\nERROR:\nNo arguments inserted. Please, insert one of these commands:\nget {key} - to retrieve a value from it correspondent {key}\nset {key, value} - to set a new or update key/value pair\n\n")
-}
-
-func hasValidGetArguments(arguments []string) bool {
-	if len(arguments) != 1 || arguments[0] == "" {
-		return false
-	}
-	return true
-}
-
-func hasValidSetArguments(arguments []string) bool {
-	if len(arguments) != 2 || arguments[0] == "" {
-		return false
-	}
-
-	return true
-}
-
-func hasValidArguments(action string, arguments []string) bool {
-	if strings.EqualFold(action, "get") {
-		return hasValidGetArguments(arguments)
-	}
-	return hasValidSetArguments(arguments)
+	fmt.Fprint(os.Stderr, "\n\nERROR:\nNo arguments inserted. Please, insert one of these commands:\nget {key} - to retrieve a value from it correspondent {key}\nset {key} - to set a new or update key/value pair\n\n")
 }
 
 func currentLogFiles() []string {
@@ -67,7 +46,7 @@ func main() {
 
 	fmt.Printf("\nWelcome to LogDB. We support the following commands bellow:\n\n")
 	fmt.Printf("get {key} - to retrieve a value from it correspondent {key}\n")
-	fmt.Printf("set {key,value} - to set a new or update key/value pair\n")
+	fmt.Printf("set {key} - to set a new or update key/value pair\n")
 	fmt.Printf("exit - Leave LogDB\n\n")
 
 	command := &command.Command{}
@@ -86,13 +65,14 @@ func main() {
 	go command.CompactAndMerge()
 
 	for {
-		fmt.Printf("Insert your command:\n\n")
+		fmt.Printf("Insert your command and press enter:\n\n")
+		fmt.Print("-> ")
 
 		var action string
 		var key string
 		var value string
 
-		fmt.Scanf("%s %s %s", &action, &key, &value)
+		fmt.Scanf("%s %s", &action, &key)
 
 		valid_cmds := []string{"get", "set"}
 
@@ -105,19 +85,9 @@ func main() {
 			break
 		}
 
-		var cmd_args []string
-
-		if key != "" {
-			cmd_args = append(cmd_args, key)
-		}
-
-		if value != "" {
-			cmd_args = append(cmd_args, value)
-		}
-
 		is_valid_action := false
 		for _, cmd := range valid_cmds {
-			if strings.EqualFold(action, cmd) && len(cmd_args) != 0 && hasValidArguments(action, cmd_args) {
+			if strings.EqualFold(action, cmd) && key != "" {
 				is_valid_action = true
 				break
 			}
@@ -136,11 +106,15 @@ func main() {
 				fmt.Fprintf(os.Stderr, "\n\nError during get command: %v\n\n", err)
 				continue
 			}
-			fmt.Printf("\nResult:\n\n%s\n\n", value)
+			fmt.Printf("\nResult:\n\n-> %s\n\n", value)
 		}
 
 		if strings.EqualFold(action, "set") {
-			value = cmd_args[1]
+			reader := bufio.NewReader(os.Stdin)
+			fmt.Printf("\n\nInsert the value for this key and press enter:\n\n")
+			fmt.Print("-> ")
+			value, _ = reader.ReadString('\n')
+			value = strings.Replace(value, "\n", "", -1)
 			// caso seja uma escrita, chama função que escreve. Verifica retorno para ver se houve erro
 			if err = command.SetValueIntoLog(key, value); err != nil {
 				fmt.Fprintf(os.Stderr, "\n\nError during set command: %v\n\n", err)
