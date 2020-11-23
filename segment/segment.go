@@ -107,7 +107,7 @@ func (s *Segment) GetValueFromSegment(key string) (string, error) {
 	lineData := fileLines[index]
 
 	// Pega o valor correspondente
-	value := strings.Split(lineData, ",")[1]
+	value := strings.SplitN(lineData, ",", 2)[1]
 
 	return value, nil
 }
@@ -146,7 +146,7 @@ func (s *Segment) Compact() (map[string]string, error) {
 
 	recentKeysValues := make(map[string]string)
 	for i, line := range fileLines {
-		keyValue := strings.Split(line, ",")
+		keyValue := strings.SplitN(line, ",", 2)
 		key := keyValue[0]
 		value := keyValue[1]
 
