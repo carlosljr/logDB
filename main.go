@@ -47,33 +47,24 @@ func main() {
 
 	var err error
 
-	//Setta valor default do tamanho do segmento
-	segmentSize := 3
+	// Settar tamanho do segmento e intervalo de compactação e merge com valores default
+	optionalParams := map[string]int{"segmentSize": 3, "compactMergeInterval": 30}
 
-	// Setta valor default para intervalo, em segundos, entre compactacoes e merge
-	compactMergeInterval := 30
+	params := []string{"segmentSize", "compactMergeInterval"}
 
-	// Verificar se tamanho do segmento foi settado
-	if len(os.Args) > 1 {
-		args := os.Args[1:]
-		// Pega tamanho do segmento
-		segmentSize, err = strconv.Atoi(args[0])
+	args := os.Args[1:]
+
+	// Pegar valores parametrizados do comando (tamanho do segmento e intervalo de compactação e merge)
+	for i, value := range args {
+		optionalParams[params[i]], err = strconv.Atoi(value)
+
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "\n\nError on argument value. It needs to be a number!\n\n")
 			os.Exit(1)
 		}
-
-		// Verificar se o intervalo de compact e merge foi settado
-		if len(args) == 2 {
-			// Pega o valor do tempo
-			compactMergeInterval, err = strconv.Atoi(args[1])
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "\n\nError on argument value. It needs to be a number!\n\n")
-				os.Exit(1)
-			}
-		}
-
 	}
+	fmt.Println("Segment Size", optionalParams["segmentSize"])
+	fmt.Println("Interval", optionalParams["compactMergeInterval"])
 
 	fmt.Printf("\nWelcome to LogDB. We support the following commands bellow:\n\n")
 	fmt.Printf("get {key} - to retrieve a value from it correspondent {key}\n")
@@ -81,8 +72,8 @@ func main() {
 	fmt.Printf("exit - Leave LogDB\n\n")
 
 	command := &command.Command{
-		SegmentSize:             segmentSize,
-		CompactAndMergeInterval: compactMergeInterval,
+		SegmentSize:             optionalParams["segmentSize"],
+		CompactAndMergeInterval: optionalParams["compactMergeInterval"],
 	}
 
 	logFiles := currentLogFiles()
