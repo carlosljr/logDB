@@ -1,6 +1,7 @@
 package command
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"sort"
@@ -12,14 +13,16 @@ import (
 )
 
 type Command struct {
-	CurrentSegment   *segment.Segment
-	Segments         []*segment.Segment
-	numberOfSegments int
+	CurrentSegment          *segment.Segment
+	Segments                []*segment.Segment
+	SegmentSize             int
+	CompactAndMergeInterval int
+	numberOfSegments        int
 }
 
 func (c *Command) CompactAndMerge() {
 	for {
-		time.Sleep(30 * time.Second)
+		time.Sleep(time.Duration(c.CompactAndMergeInterval) * time.Second)
 		if len(c.Segments) < 2 {
 			fmt.Println("Not enough segments to compact and merge")
 			continue
@@ -148,7 +151,7 @@ func (c *Command) LoadExistingSegments(logFiles []string) error {
 }
 
 func (c *Command) SetValueIntoLog(key, value string) error {
-	if c.CurrentSegment == nil || c.CurrentSegment.LineNumber >= 3 {
+	if c.CurrentSegment == nil || c.CurrentSegment.LineNumber >= c.SegmentSize {
 		c.CurrentSegment = &segment.Segment{
 			LogFile: fmt.Sprintf("logfile_%d.log", c.numberOfSegments+1),
 		}
@@ -163,6 +166,11 @@ func (c *Command) SetValueIntoLog(key, value string) error {
 func (c *Command) GetValueFromKey(key string) (string, error) {
 	var value string
 	var err error
+
+	if len(c.Segments) == 0 {
+		return value, errors.New("Your database is empty.")
+	}
+
 	for i := len(c.Segments) - 1; i >= 0; i-- {
 		s := c.Segments[i]
 

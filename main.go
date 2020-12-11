@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/carlosljr/logDB/command"
@@ -44,12 +45,45 @@ func currentLogFiles() []string {
 
 func main() {
 
+	var err error
+
+	//Setta valor default do tamanho do segmento
+	segmentSize := 3
+
+	// Setta valor default para intervalo, em segundos, entre compactacoes e merge
+	compactMergeInterval := 30
+
+	// Verificar se tamanho do segmento foi settado
+	if len(os.Args) > 1 {
+		args := os.Args[1:]
+		// Pega tamanho do segmento
+		segmentSize, err = strconv.Atoi(args[0])
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "\n\nError on argument value. It needs to be a number!\n\n")
+			os.Exit(1)
+		}
+
+		// Verificar se o intervalo de compact e merge foi settado
+		if len(args) == 2 {
+			// Pega o valor do tempo
+			compactMergeInterval, err = strconv.Atoi(args[1])
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "\n\nError on argument value. It needs to be a number!\n\n")
+				os.Exit(1)
+			}
+		}
+
+	}
+
 	fmt.Printf("\nWelcome to LogDB. We support the following commands bellow:\n\n")
 	fmt.Printf("get {key} - to retrieve a value from it correspondent {key}\n")
 	fmt.Printf("set {key} - to set a new or update key/value pair\n")
 	fmt.Printf("exit - Leave LogDB\n\n")
 
-	command := &command.Command{}
+	command := &command.Command{
+		SegmentSize:             segmentSize,
+		CompactAndMergeInterval: compactMergeInterval,
+	}
 
 	logFiles := currentLogFiles()
 
