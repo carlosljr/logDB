@@ -86,6 +86,7 @@ func main() {
 		}
 	}
 
+	// Go routine to compact and merge periodically
 	go command.CompactAndMerge()
 
 	for {
