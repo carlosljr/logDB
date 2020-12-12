@@ -42,13 +42,15 @@ func (s *Segment) writeLineIntoFile(key, value string) error {
 	return nil
 }
 
+// SetKeyValueIntoSegment append a {key,value} line into
+// file.
 func (s *Segment) SetKeyValueIntoSegment(key, value string) error {
-	// Escreve chave e valor no arquivo
+	// Write key and value into file
 	if err := s.writeLineIntoFile(key, value); err != nil {
 		return err
 	}
 
-	//Insere chave e index na hash_table
+	// Insert key and index on hash table
 	if s.hashTable == nil {
 		s.hashTable = make(map[string]int)
 	}
@@ -88,30 +90,35 @@ func (s *Segment) getFileLines() ([]string, error) {
 	return lines, nil
 }
 
+// GetValueFromSegment searches for the key in segment file
+// from the key index in hash table. If key is not found,
+// it will return an error.
 func (s *Segment) GetValueFromSegment(key string) (string, error) {
+	// Get the index in hash table
 	index, err := s.getIndexKey(key)
 
 	if err != nil {
 		return "", err
 	}
 
-	// Retorna o arquivo
-	// Transforma o conjunto de linhas em um array
+	// Returns the file
+	// Transforms lines in array
 	fileLines, err := s.getFileLines()
 
 	if err != nil {
 		return "", err
 	}
 
-	// Pega a linha correspondente ao index
+	// Get the line correspondent to the index
 	lineData := fileLines[index]
 
-	// Pega o valor correspondente
+	// Get value
 	value := strings.SplitN(lineData, ",", 2)[1]
 
 	return value, nil
 }
 
+// DeleteMe removes the segment file
 func (s *Segment) DeleteMe() error {
 	logFilePath := fmt.Sprintf("%s/%s", filePath, s.LogFile)
 
@@ -137,6 +144,10 @@ func (s *Segment) resetMe(keyValues map[string]string) error {
 	return nil
 }
 
+// Compact the segment file to keep the newer key/value
+// pairs, removing redundant keys with old values.
+// The newer key/value pairs and error in
+// compact operation are returned.
 func (s *Segment) Compact() (map[string]string, error) {
 	fileLines, err := s.getFileLines()
 
@@ -150,6 +161,9 @@ func (s *Segment) Compact() (map[string]string, error) {
 		key := keyValue[0]
 		value := keyValue[1]
 
+		// It will get the current index from the key
+		// and verify if the index corresponds to the
+		// current line.
 		if currentIndex, ok := s.hashTable[key]; !ok {
 			errorMsg := fmt.Sprintf("Could not find index for key %s", key)
 			return nil, errors.New(errorMsg)
@@ -161,6 +175,8 @@ func (s *Segment) Compact() (map[string]string, error) {
 	return recentKeysValues, s.resetMe(recentKeysValues)
 }
 
+// LoadExistingData loads all data from existing segment file
+// and mount its hash table.
 func (s *Segment) LoadExistingData() error {
 	fileLines, err := s.getFileLines()
 

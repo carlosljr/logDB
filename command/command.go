@@ -20,6 +20,9 @@ type Command struct {
 	numberOfSegments        int
 }
 
+// CompactAndMerge makes compaction
+// for existing segments and merge them
+// in a estipulated interval.
 func (c *Command) CompactAndMerge() {
 	for {
 		time.Sleep(time.Duration(c.CompactAndMergeInterval) * time.Second)
@@ -65,22 +68,20 @@ func (c *Command) CompactAndMerge() {
 		}
 
 		if !mergedWithSuccess {
-			// Ter uma funcao no segmento que se auto deleta
+			// Auto delete merged segment
 			mergedSegment.DeleteMe()
 			continue
 		}
 
-		// Remover os segmentos mergeados e remover do slice
-
-		// Remover segmentos do slice
+		// Remove segments from slice
 		c.Segments = c.Segments[len(c.Segments)-1:]
 
-		// Inserir na primeira posição
+		// Keep only merged and current segment
 		c.Segments[0] = mergedSegment
 		c.Segments = append(c.Segments, c.CurrentSegment)
 
 		for _, s := range segmentsLessCurrent {
-			// Chamar funcao do segmento que se auto deleta
+			// Auto delete segment that was merged
 			s.DeleteMe()
 		}
 
@@ -123,6 +124,9 @@ func (c *Command) sortAndUpdateSegments(segments []*segment.Segment) {
 
 }
 
+// LoadExistingSegments will be called in logDB boot.
+// It will load existing segments and build their hash table
+// map to index existing keys.
 func (c *Command) LoadExistingSegments(logFiles []string) error {
 	var mergedSegments []*segment.Segment
 	var rawSegments []*segment.Segment
@@ -130,7 +134,7 @@ func (c *Command) LoadExistingSegments(logFiles []string) error {
 		s := &segment.Segment{
 			LogFile: logFile,
 		}
-		// Carrega os dados do log e gera a hash table
+		// Load data from segment file and build hash table
 		if err := s.LoadExistingData(); err != nil {
 			fmt.Fprintf(os.Stderr, "\n\nFailed during logFile %s load process: %v\n\n", s.LogFile, err)
 			return err
@@ -150,6 +154,8 @@ func (c *Command) LoadExistingSegments(logFiles []string) error {
 	return nil
 }
 
+// SetValueIntoLog stores a key and value in current
+// segment.
 func (c *Command) SetValueIntoLog(key, value string) error {
 	if c.CurrentSegment == nil || c.CurrentSegment.LineNumber >= c.SegmentSize {
 		c.CurrentSegment = &segment.Segment{
@@ -159,10 +165,13 @@ func (c *Command) SetValueIntoLog(key, value string) error {
 		c.numberOfSegments += 1
 	}
 
-	// Inserir chave e valor no arquivo de log. Retorna area de memoria inserida
+	// Insert key and value
 	return c.CurrentSegment.SetKeyValueIntoSegment(key, value)
 }
 
+// GetValueFromKey retrieves value from key passed as argument.
+// It will search from the current segment to old ones following
+// theit existence order. If key is not found, it will return an error.
 func (c *Command) GetValueFromKey(key string) (string, error) {
 	var value string
 	var err error

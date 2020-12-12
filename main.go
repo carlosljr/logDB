@@ -47,14 +47,14 @@ func main() {
 
 	var err error
 
-	// Settar tamanho do segmento e intervalo de compactação e merge com valores default
+	// Set segment size and interval
 	optionalParams := map[string]int{"segmentSize": 3, "compactMergeInterval": 30}
 
 	params := []string{"segmentSize", "compactMergeInterval"}
 
 	args := os.Args[1:]
 
-	// Pegar valores parametrizados do comando (tamanho do segmento e intervalo de compactação e merge)
+	// Get values from terminal
 	for i, value := range args {
 		optionalParams[params[i]], err = strconv.Atoi(value)
 
@@ -66,7 +66,7 @@ func main() {
 	fmt.Println("Segment Size", optionalParams["segmentSize"])
 	fmt.Println("Interval", optionalParams["compactMergeInterval"])
 
-	fmt.Printf("\nWelcome to LogDB. We support the following commands bellow:\n\n")
+	fmt.Printf("\nWelcome to logDB. We support the following commands bellow:\n\n")
 	fmt.Printf("get {key} - to retrieve a value from it correspondent {key}\n")
 	fmt.Printf("set {key} - to set a new or update key/value pair\n")
 	fmt.Printf("exit - Leave LogDB\n\n")
@@ -79,9 +79,8 @@ func main() {
 	logFiles := currentLogFiles()
 
 	if len(logFiles) != 0 {
-		// Carrega os arquivos de log e existentes
-		// e cria os segmentos com suas respectivas hash tables
-		// fmt.Println("Logfiles:", logFiles)
+		// Load pre-existent segment files
+		// and create correspondent hash tables
 		if err := command.LoadExistingSegments(logFiles); err != nil {
 			return
 		}
@@ -126,7 +125,7 @@ func main() {
 		var err error
 
 		if strings.EqualFold(action, "get") {
-			// Chama função que retorna o valor associado a chave
+			// Call function to return value from its key
 			if value, err = command.GetValueFromKey(key); err != nil {
 				fmt.Fprintf(os.Stderr, "\n\nError during get command: %v\n\n", err)
 				continue
@@ -140,7 +139,7 @@ func main() {
 			fmt.Print("-> ")
 			value, _ = reader.ReadString('\n')
 			value = strings.Replace(value, "\n", "", -1)
-			// caso seja uma escrita, chama função que escreve. Verifica retorno para ver se houve erro
+			// Writes key and value in current segment
 			if err = command.SetValueIntoLog(key, value); err != nil {
 				fmt.Fprintf(os.Stderr, "\n\nError during set command: %v\n\n", err)
 				continue
@@ -148,14 +147,6 @@ func main() {
 			fmt.Printf("\nValue \"%s\" stored with success!\n\n", value)
 		}
 	}
-	// filePath := "./log_storage"
-
-	// if _, err := os.Stat(filePath); !os.IsNotExist(err) {
-	// 	err := os.RemoveAll("./log_storage")
-	// 	if err != nil {
-	// 		fmt.Fprintf(os.Stderr, "\n\nCould not remove log file storage: %v\n\n", err)
-	// 	}
-	// }
 
 	fmt.Fprintf(os.Stdout, "\nSee ya!\n\n")
 	os.Exit(0)
