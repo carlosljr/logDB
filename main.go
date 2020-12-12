@@ -145,7 +145,7 @@ func main() {
 				fmt.Fprintf(os.Stderr, "\n\nError during set command: %v\n\n", err)
 				continue
 			}
-			fmt.Printf("\nValue %s stored with success\n\n", value)
+			fmt.Printf("\nValue \"%s\" stored with success!\n\n", value)
 		}
 	}
 	// filePath := "./log_storage"
