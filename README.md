@@ -59,7 +59,7 @@ logfile_<segment_number>
 ```
 where:
 
-segment_number: The sequence segment number. First segment created will have `1` value and so on.
+segment_number: The sequence number of a segment. First segment created will have `1` value and so on.
 
 A segment file generated from a merge operation between other segment files will be
 
