@@ -58,9 +58,10 @@ When inserted a key/value, this data will be stored in a segment created in `log
 logfile_<segment_number>
 ```
 where:
+
 segment_number: The sequence segment number. First segment created will have `1` value and so on.
 
-A segment resulted from a merged operation will be
+A segment file generated from a merge operation between other segment files will be
 
 ```
 logfile-merged_<segment_number>
